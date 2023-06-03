@@ -1,1 +1,13 @@
 rootProject.name = 'api-gateway'
+
+include 'eureka'
+
+include 'gateway'
+
+include 'a_service'
+include 'b_service'
+include 'eureka'
+include 'gateway'
+include 'a_service'
+include 'b_service'
+
