@@ -1,10 +1,6 @@
 server:
   port: 0
 
-spring:
-  application:
-    name: b-service
-
 eureka:
   instance:
     instance-id: ${spring.cloud.hostname}:${spring.application.instance_id:${random:value}}
