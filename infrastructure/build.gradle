@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+    id 'io.freefair.lombok' version '8.4'
+}
+
+dependencies {
+    implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+    implementation 'org.hibernate:hibernate-validator:7.0.5.Final'
+    implementation 'org.glassfish:jakarta.el:4.0.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+    implementation 'com.fasterxml.uuid:java-uuid-generator:4.1.0'
+    implementation 'org.apache.commons:commons-lang3:3.13.0'
+    implementation 'commons-validator:commons-validator:1.7'
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.2'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.2'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.2'
+
+    compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+    testImplementation(platform('org.junit:junit-bom:5.7.1'))
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+    testImplementation 'org.assertj:assertj-core:3.20.2'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.3.1'
+}
+
+jar {
+    enabled(true)
+}

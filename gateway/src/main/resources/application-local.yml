@@ -4,19 +4,22 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://localhost:8761/eureka/
 
 spring:
   cloud:
     gateway:
       routes:
-        - id: a-service
+        - id: first-service
           predicates:
-            - Path=/v1/a-service/**
-          uri: lb://A-SERVICE
+            - Path=/a-service/**
+          uri: lb://a-service
+          filters:
+            - RewritePath=/a-service/(?<segment>.*), /$\{segment}
 
-
-        - id: b-service
+        - id: second-service
           predicates:
-            - Path=/v1/b-service/**
+            - Path=/b-service/**
           uri: lb://B-SERVICE
+          filters:
+            - RewritePath=/b-service/(?<segment>.*), /$\{segment}
