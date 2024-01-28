@@ -1,0 +1,47 @@
+logging:
+  level:
+    root: INFO
+
+spring:
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:log4jdbc:h2:mem:user_test_db;DATABASE_TO_UPPER=false
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    username: sa
+    password:
+  jpa:
+    defer-datasource-initialization: true
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: none
+  sql:
+    init:
+      schema-locations: classpath*:schema/create.sql
+      encoding: UTF-8
+      mode: always
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: TVNDLVVTRVItU0VDUkVULUZPUi1BVVRIT1JJWkFUSU9O
+
+aes:
+  user-secret: Q1RNUy1QUk9ELU9GLUVOQ1JZUFRJT04K
+
+api-key:
+  header: X-API-Key
+  value:
+    user: QVBJLUtFWS1GT1ItTVNDLVVTRVI=
+
+base-host: http://localhost:9000
