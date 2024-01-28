@@ -1,18 +1,22 @@
 package com.ys.user.domain;
 
 import com.ys.infrastructure.domain.LongId;
-import lombok.Value;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
-@Value(staticConstructor = "of")
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class UserId implements LongId {
-    Long id;
+    @NotNull
+    private Long id;
 
     @Override
     public Long get() {
         return this.id;
     }
 
-    public static UserId getEmptyUserId() {
-        return new UserId(null);
+    public static UserId of(Long id) {
+        return new UserId(id);
     }
 }

@@ -1,7 +1,7 @@
 package com.ys.user.domain;
 
 import com.ys.infrastructure.exception.AccessDeniedException;
-import com.ys.user.domain.fixture.SupportUserFixture;
+import com.ys.user.fixture.SupportUserFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -13,7 +13,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 
 class AccountTest extends SupportUserFixture {
     private Account account;

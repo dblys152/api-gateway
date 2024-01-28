@@ -1,4 +1,4 @@
-package com.ys.user.domain.fixture;
+package com.ys.user.fixture;
 
 import com.ys.user.domain.*;
 

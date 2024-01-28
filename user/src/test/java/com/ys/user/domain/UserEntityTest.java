@@ -1,7 +1,7 @@
 package com.ys.user.domain;
 
 import com.ys.infrastructure.exception.AccessDeniedException;
-import com.ys.user.domain.fixture.SupportUserFixture;
+import com.ys.user.fixture.SupportUserFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,27 +16,20 @@ class UserEntityTest extends SupportUserFixture {
 
     @BeforeEach
     void setUp() {
-        userEntity = UserEntity.of(
-                USER_ID,
-                UserType.USER,
-                UserStatus.JOINED,
-                Account.of(EMAIL, PASSWORD, OLD_PASSWORD, PASSWORD_MODIFIED_AT, PASSWORD_WRONG_COUNT, LAST_LOGIN_AT),
-                Profile.of(USER_NAME, MOBILE, BIRTH_DATE, Gender.MALE.name()),
-                USER_ROLES,
-                NOW,
-                NOW,
-                null
-        );
+        Account account = Account.of(EMAIL, PASSWORD, OLD_PASSWORD, PASSWORD_MODIFIED_AT, PASSWORD_WRONG_COUNT, LAST_LOGIN_AT);
+        Profile profile = Profile.of(USER_NAME, MOBILE, BIRTH_DATE, Gender.MALE.name());
+        userEntity = UserEntity.of(USER_ID, UserType.USER, UserStatus.JOINED, account, profile, USER_ROLES, NOW, NOW, null);
     }
 
     @Test
     void 사용자를_생성한다() {
         CreateUserCommand command = new CreateUserCommand(Account.create(EMAIL, PASSWORD), PROFILE);
 
-        UserEntity actual = UserEntity.create(command);
+        UserEntity actual = UserEntity.create(USER_ID, command);
 
         assertAll(
                 () -> assertThat(actual).isNotNull(),
+                () -> assertThat(actual.getUserId()).isEqualTo(USER_ID),
                 () -> assertThat(actual.getType()).isEqualTo(UserType.USER),
                 () -> assertThat(actual.getStatus()).isEqualTo(UserStatus.JOINED),
                 () -> assertThat(actual.getJoinedAt()).isNotNull(),

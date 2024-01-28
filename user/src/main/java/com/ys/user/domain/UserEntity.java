@@ -54,10 +54,10 @@ public class UserEntity {
         return new UserEntity(userId, type, status, account, profile, roles, joinedAt, modifiedAt, withdrawnAt);
     }
 
-    public static UserEntity create(CreateUserCommand command) {
+    public static UserEntity create(UserId userId, CreateUserCommand command) {
         LocalDateTime now = LocalDateTime.now();
         return new UserEntity(
-                UserId.getEmptyUserId(),
+                userId,
                 UserType.USER,
                 UserStatus.JOINED,
                 command.getAccount(),
