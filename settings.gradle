@@ -1,7 +1,9 @@
 rootProject.name = 'api-gateway'
 
-include 'user'
-
 include 'eureka'
 
 include 'gateway'
+
+include 'user'
+
+include 'authentication'
