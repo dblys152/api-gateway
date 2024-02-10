@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 
-<mapper namespace="com.ys.user.adapter.out.persistence.UserEntityRepository">
+<mapper namespace="com.ys.user.adapter.out.persistence.UserRepository">
 
-    <insert id="insert" parameterType="com.ys.user.domain.UserEntity">
+    <insert id="insert" parameterType="com.ys.user.domain.User">
         INSERT INTO USER_INFO (
             USER_ID,
             TYPE,
@@ -43,7 +43,7 @@
         )
     </insert>
 
-    <update id="updateByPasswordWrongCount" parameterType="com.ys.user.domain.UserEntity">
+    <update id="updateByPasswordWrongCount" parameterType="com.ys.user.domain.User">
         UPDATE  USER_INFO
         SET
                 PASSWORD_WRONG_COUNT = #{account.passwordWrongCount},
@@ -52,7 +52,7 @@
                 USER_ID = #{userId.id}
     </update>
 
-    <update id="updateByLastLoginAtAndPasswordWrongCount" parameterType="com.ys.user.domain.UserEntity">
+    <update id="updateByLastLoginAtAndPasswordWrongCount" parameterType="com.ys.user.domain.User">
         UPDATE  USER_INFO
         SET
                 LAST_LOGIN_AT = #{account.lastLoginAt},
@@ -62,7 +62,7 @@
                 USER_ID = #{userId.id}
     </update>
 
-    <update id="updateByPassword" parameterType="com.ys.user.domain.UserEntity">
+    <update id="updateByPassword" parameterType="com.ys.user.domain.User">
         UPDATE  USER_INFO
         SET
                 PASSWORD = #{account.password},
@@ -71,7 +71,7 @@
                 USER_ID = #{userId.id}
     </update>
 
-    <update id="updateByProfile" parameterType="com.ys.user.domain.UserEntity">
+    <update id="updateByProfile" parameterType="com.ys.user.domain.User">
         UPDATE  USER_INFO
         SET
                 NAME = #{profile.name},
@@ -83,7 +83,7 @@
                 USER_ID = #{userId.id}
     </update>
 
-    <update id="updateByRoles" parameterType="com.ys.user.domain.UserEntity">
+    <update id="updateByRoles" parameterType="com.ys.user.domain.User">
         UPDATE  USER_INFO
         SET
                 ROLES = #{roles},
@@ -92,7 +92,7 @@
                 USER_ID = #{userId.id}
     </update>
 
-    <delete id="updateByWithdrawnAt" parameterType="com.ys.user.domain.UserEntity">
+    <delete id="updateByWithdrawnAt" parameterType="com.ys.user.domain.User">
         UPDATE  USER_INFO
         SET
                 WITHDRAWN_AT = #{withdrawnAt}
@@ -100,7 +100,7 @@
                 USER_ID = #{userId.id}
     </delete>
 
-    <resultMap id="userResultMap" type="com.ys.user.domain.UserEntity">
+    <resultMap id="userResultMap" type="com.ys.user.domain.User">
         <id property="userId.id" column="USER_ID" />
         <result property="type" column="TYPE" />
         <result property="status" column="STATUS" />
@@ -126,13 +126,6 @@
         </association>
     </resultMap>
 
-    <select id="selectOneById" parameterType="com.ys.user.domain.UserId" resultMap="userResultMap">
-        SELECT  *
-        FROM    USER_INFO
-        WHERE   1 = 1
-        AND     USER_ID = #{id}
-    </select>
-
     <select id="selectOneByIdAndWithdrawnAtIsNull" parameterType="com.ys.user.domain.UserId" resultMap="userResultMap">
         SELECT  *
         FROM    USER_INFO
@@ -141,10 +134,19 @@
         AND     WITHDRAWN_AT IS NULL
     </select>
 
-    <select id="selectOneByEmail" parameterType="String" resultMap="userResultMap">
+    <select id="selectAllByEmailAndWithdrawnAtIsNull" parameterType="String" resultMap="userResultMap">
         SELECT  *
         FROM    USER_INFO
         WHERE   1 = 1
         AND     EMAIL = #{email}
+        AND     WITHDRAWN_AT IS NULL
+    </select>
+
+    <select id="selectAllByMobileAndWithdrawnAtIsNull" parameterType="String" resultMap="userResultMap">
+        SELECT  *
+        FROM    USER_INFO
+        WHERE   1 = 1
+        AND     MOBILE = #{mobile}
+        AND     WITHDRAWN_AT IS NULL
     </select>
 </mapper>

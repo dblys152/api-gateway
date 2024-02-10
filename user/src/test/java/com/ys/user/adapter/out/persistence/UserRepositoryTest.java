@@ -11,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,82 +20,82 @@ import static org.assertj.core.api.Assertions.assertThat;
 @MybatisTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ContextConfiguration(classes = MybatisConfig.class)
-class UserEntityRepositoryTest extends SupportUserFixture {
+class UserRepositoryTest extends SupportUserFixture {
     @Autowired
-    private UserEntityRepository repository;
+    private UserRepository repository;
 
     private static final String AES_SECRET = "Q1RNUy1QUk9ELU9GLUVOQ1JZUFRJT04K";
 
-    private UserEntity userEntity;
+    private User user;
 
     @BeforeEach
     void setUp() {
         Account account = Account.create(EMAIL, PASSWORD);
         Profile profile = Profile.of(USER_NAME, MOBILE, BIRTH_DATE, Gender.MALE.name());
         CreateUserCommand command = new CreateUserCommand(account, profile);
-        userEntity = UserEntity.create(USER_ID, command);
-        userEntity.encrypt(AES_SECRET);
+        user = User.create(command);
+        user.encrypt(AES_SECRET);
     }
 
     @Test
     void insert() {
-        repository.insert(userEntity);
+        repository.insert(user);
     }
 
     @Test
     void updateByPasswordWrongCount() {
-        repository.insert(userEntity);
-        repository.updateByPasswordWrongCount(userEntity);
+        repository.insert(user);
+        repository.updateByPasswordWrongCount(user);
     }
 
     @Test
     void updateByLastLoginAtAndPasswordWrongCount() {
-        repository.insert(userEntity);
-        repository.updateByLastLoginAtAndPasswordWrongCount(userEntity);
+        repository.insert(user);
+        repository.updateByLastLoginAtAndPasswordWrongCount(user);
     }
 
     @Test
     void updateByPassword() {
-        repository.insert(userEntity);
-        repository.updateByPassword(userEntity);
+        repository.insert(user);
+        repository.updateByPassword(user);
     }
 
     @Test
     void updateByProfile() {
-        repository.insert(userEntity);
-        repository.updateByProfile(userEntity);
+        repository.insert(user);
+        repository.updateByProfile(user);
     }
 
     @Test
     void updateByWithdrawnAt() {
-        repository.insert(userEntity);
-        repository.updateByWithdrawnAt(userEntity);
-    }
-
-    @Test
-    void selectOneById() {
-        repository.insert(userEntity);
-
-        Optional<UserEntity> actual = repository.selectOneById(userEntity.getUserId());
-
-        assertThat(actual).isPresent();
+        repository.insert(user);
+        repository.updateByWithdrawnAt(user);
     }
 
     @Test
     void selectOneByIdAndWithdrawnAtIsNull() {
-        repository.insert(userEntity);
+        repository.insert(user);
 
-        Optional<UserEntity> actual = repository.selectOneByIdAndWithdrawnAtIsNull(userEntity.getUserId());
+        Optional<User> actual = repository.selectOneByIdAndWithdrawnAtIsNull(user.getUserId());
 
         assertThat(actual).isPresent();
     }
 
     @Test
-    void selectOneByEmail() {
-        repository.insert(userEntity);
+    void selectAllByEmailAndWithdrawnAtIsNull() {
+        repository.insert(user);
 
-        Optional<UserEntity> actual = repository.selectOneByEmail(userEntity.getAccount().getEmail());
+        List<User> actual = repository.selectAllByEmailAndWithdrawnAtIsNull(user.getAccount().getEmail());
 
-        assertThat(actual).isPresent();
+        assertThat(actual).isNotEmpty();
+    };
+
+    @Test
+    void selectAllByMobileAndWithdrawnAtIsNull() {
+        repository.insert(user);
+
+        List<User> actual = repository.selectAllByMobileAndWithdrawnAtIsNull(user.getProfile().getMobile());
+
+        assertThat(actual).isNotEmpty();
     };
 }
