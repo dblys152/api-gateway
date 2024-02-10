@@ -83,7 +83,7 @@ public class Account {
         return UserPasswordEncoder.matches(password, this.password);
     }
 
-    public void modifyPassword(String password) {
+    public void changePassword(String password) {
         validatePassword(this.email, password);
         validateMatchOldPassword(password);
         this.oldPassword = this.password;

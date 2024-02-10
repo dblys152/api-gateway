@@ -66,7 +66,7 @@ class AccountTest extends SupportUserFixture {
     void 비밀번호를_변경한다() {
         String newPassword = "abcd99#000";
 
-        account.modifyPassword(newPassword);
+        account.changePassword(newPassword);
 
         assertThat(UserPasswordEncoder.matches(newPassword, account.getPassword())).isTrue();
     }

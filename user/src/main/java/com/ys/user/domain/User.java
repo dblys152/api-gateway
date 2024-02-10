@@ -1,7 +1,12 @@
 package com.ys.user.domain;
 
+import com.github.f4b6a3.tsid.TsidCreator;
+import com.ys.infrastructure.exception.UnauthorizedException;
+import com.ys.infrastructure.jwt.PayloadInfo;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 
@@ -10,10 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @ToString
-public class UserEntity {
-    public static final String ROLE_ADMIN = "ROLE_ADMIN";
-    public static final String ROLE_USER = "ROLE_USER";
-
+public class User {
     @NotNull
     private UserId userId;
 
@@ -40,7 +42,7 @@ public class UserEntity {
 
     private LocalDateTime withdrawnAt;
 
-    public static UserEntity of(
+    public static User of(
             UserId userId,
             UserType type,
             UserStatus status,
@@ -51,18 +53,18 @@ public class UserEntity {
             LocalDateTime modifiedAt,
             LocalDateTime withdrawnAt
     ) {
-        return new UserEntity(userId, type, status, account, profile, roles, joinedAt, modifiedAt, withdrawnAt);
+        return new User(userId, type, status, account, profile, roles, joinedAt, modifiedAt, withdrawnAt);
     }
 
-    public static UserEntity create(UserId userId, CreateUserCommand command) {
+    public static User create(CreateUserCommand command) {
         LocalDateTime now = LocalDateTime.now();
-        return new UserEntity(
-                userId,
+        return new User(
+                UserId.of(TsidCreator.getTsid256().toLong()),
                 UserType.USER,
                 UserStatus.JOINED,
                 command.getAccount(),
                 command.getProfile(),
-                ROLE_USER,
+                UserRole.ROLE_USER.name(),
                 now,
                 now,
                 null
@@ -73,8 +75,8 @@ public class UserEntity {
         return this.account.matchesPassword(password);
     }
 
-    public void modifyPassword(String password) {
-        this.account.modifyPassword(password);
+    public void changePassword(String password) {
+        this.account.changePassword(password);
         this.modifiedAt = LocalDateTime.now();
     }
 
@@ -92,19 +94,19 @@ public class UserEntity {
         this.modifiedAt = LocalDateTime.now();
     }
 
-    public void modifyLastLoginAtAndInitPasswordWrongCount() {
+    public void changeLastLoginAtAndInitPasswordWrongCount() {
         LocalDateTime now = LocalDateTime.now();
         this.account.modifyLastLoginAt(now);
         this.account.initPasswordWrongCount();
         this.modifiedAt = now;
     }
 
-    public void modifyProfile(ChangeUserProfileCommand command) {
+    public void changeProfile(ChangeUserProfileCommand command) {
         this.profile = command.getProfile();
         this.modifiedAt = LocalDateTime.now();
     }
 
-    public void modifyRoles(String roles) {
+    public void changeRoles(String roles) {
         this.roles = roles;
         this.modifiedAt = LocalDateTime.now();
     }
@@ -121,5 +123,14 @@ public class UserEntity {
     public void decrypt(String secretKey) {
         this.account.decryptEmail(secretKey);
         this.profile.decrypt(secretKey);
+    }
+
+    public static PayloadInfo getPayloadInfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new UnauthorizedException("인증된 사용자를 찾을 수 없습니다.");
+        }
+
+        return (PayloadInfo) authentication.getPrincipal();
     }
 }

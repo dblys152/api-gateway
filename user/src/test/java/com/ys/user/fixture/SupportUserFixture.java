@@ -22,7 +22,7 @@ public class SupportUserFixture {
     protected static final String BIRTH_DATE = "1995-02-25";
     protected static final Profile PROFILE = Profile.of(USER_NAME, MOBILE, BIRTH_DATE, Gender.MALE.name());
     protected static final String USER_ROLES = "ROLE_USER";
-    protected static final UserEntity USER_ENTITY = UserEntity.of(
+    protected static final User USER_ENTITY = User.of(
             USER_ID,
             UserType.USER,
             UserStatus.JOINED,
