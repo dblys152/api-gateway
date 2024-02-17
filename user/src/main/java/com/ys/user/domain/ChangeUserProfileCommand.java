@@ -9,7 +9,7 @@ import lombok.Getter;
 public class ChangeUserProfileCommand extends SelfValidating<ChangeUserProfileCommand> {
     @Valid
     @NotNull
-    Profile profile;
+    private Profile profile;
 
     public ChangeUserProfileCommand(Profile profile) {
         this.profile = profile;

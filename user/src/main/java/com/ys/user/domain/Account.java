@@ -65,17 +65,17 @@ public class Account {
 
     private static void validateEmail(String email) {
         if (!EmailValidator.getInstance().isValid(email)) {
-            throw new IllegalArgumentException("이메일 패턴이 올바르지 않습니다.");
+            throw new InvalidEmailException("이메일 패턴이 올바르지 않습니다.");
         }
     }
 
     private static void validatePassword(String email, String password) {
         if (email.equals(password)) {
-            throw new IllegalArgumentException("비밀번호를 이메일과 동일하게 지정할 수 없습니다.");
+            throw new InvalidPasswordException("비밀번호를 이메일과 동일하게 지정할 수 없습니다.");
         }
         if (StringUtils.isEmpty(password)
                 || !password.matches(PASSWORD_REGEX)) {
-            throw new IllegalArgumentException("비밀번호는 각각 1개 이상의 영문, 숫자, 특수문자를 포함한 8~12자리여야 합니다.");
+            throw new InvalidPasswordException("비밀번호는 각각 1개 이상의 영문, 숫자, 특수문자를 포함한 8~12자리여야 합니다.");
         }
     }
 
@@ -92,7 +92,7 @@ public class Account {
 
     private void validateMatchOldPassword(String password) {
         if (UserPasswordEncoder.matches(password, this.oldPassword)) {
-            throw new MatchedOldPasswordException();
+            throw new InvalidPasswordException("이전 비밀번호와 일치합니다.");
         }
     }
 

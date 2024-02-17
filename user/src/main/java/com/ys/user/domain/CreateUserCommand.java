@@ -9,11 +9,11 @@ import lombok.Getter;
 public class CreateUserCommand extends SelfValidating<CreateUserCommand> {
     @Valid
     @NotNull
-    Account account;
+    private Account account;
 
     @Valid
     @NotNull
-    Profile profile;
+    private Profile profile;
 
     public CreateUserCommand(Account account, Profile profile) {
         this.account = account;

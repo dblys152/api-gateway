@@ -72,7 +72,7 @@ public class Profile {
 
     private void validateMobile() {
         if (!this.mobile.matches(MOBILE_REGEX)) {
-            throw new IllegalArgumentException("핸드폰 번호 패턴이 올바르지 않습니다. (0xx-xxxx-xxxx)");
+            throw new InvalidMobileException("핸드폰 번호 패턴이 올바르지 않습니다. (0xx-xxxx-xxxx)");
         }
     }
 
