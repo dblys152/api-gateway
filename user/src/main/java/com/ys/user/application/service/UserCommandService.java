@@ -2,6 +2,7 @@ package com.ys.user.application.service;
 
 import com.ys.infrastructure.event.DomainEventPublisher;
 import com.ys.infrastructure.utils.EventFactory;
+import com.ys.user.application.port.in.ChangeUserPasswordUseCase;
 import com.ys.user.application.port.in.ChangeUserProfileUseCase;
 import com.ys.user.application.port.in.SignUpUseCase;
 import com.ys.user.application.port.in.WithdrawUserUseCase;
@@ -17,7 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @Service
 @RequiredArgsConstructor
-public class UserCommandService implements SignUpUseCase, ChangeUserProfileUseCase, WithdrawUserUseCase {
+public class UserCommandService implements
+        SignUpUseCase,
+        ChangeUserProfileUseCase,
+        ChangeUserPasswordUseCase,
+        WithdrawUserUseCase {
     private final LoadUserPort loadUserPort;
     private final RecordUserPort recordUserPort;
     private final EventFactory<User, UserEvent> eventFactory;
@@ -64,6 +69,17 @@ public class UserCommandService implements SignUpUseCase, ChangeUserProfileUseCa
     private void validateDuplicatedMobileByUserId(String mobile, UserId userId) {
         Users foundUsersByMobile = loadUserPort.selectAllByMobileAndWithdrawnAtIsNull(mobile);
         foundUsersByMobile.throwMobileDuplicationExceptionIfOtherUsersExistThanMe(userId);
+    }
+
+    @Override
+    public void change(UserId userId, String password) {
+        User user = loadUserPort.selectOneByIdAndWithdrawnAtIsNull(userId);
+
+        user.changePassword(password);
+        recordUserPort.updateByPassword(user);
+
+        domainEventPublisher.publish(
+                UserEventType.USER_PASSWORD_CHANGED_EVENT.name(), eventFactory.create(user), user.getModifiedAt());
     }
 
     @Override

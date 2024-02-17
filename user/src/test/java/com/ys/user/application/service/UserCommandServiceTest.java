@@ -2,7 +2,6 @@ package com.ys.user.application.service;
 
 import com.ys.infrastructure.event.DomainEventPublisher;
 import com.ys.infrastructure.utils.EventFactory;
-import com.ys.user.application.listener.DomainEventListener;
 import com.ys.user.application.port.out.LoadUserPort;
 import com.ys.user.application.port.out.RecordUserPort;
 import com.ys.user.domain.*;
@@ -17,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -29,6 +28,7 @@ class UserCommandServiceTest {
     private static final String ANY_EMAIL = "test@mail.com";
     private static final String ANY_MOBILE = "010-7777-8888";
     private static final UserId ANY_USER_ID = UserId.of(9999999999L);
+    private static final String ANY_PASSWORD = "asdf1234%";
 
     @InjectMocks
     private UserCommandService sut;
@@ -95,6 +95,24 @@ class UserCommandServiceTest {
                 () -> then(recordUserPort).should().updateByProfile(mockUser),
                 () -> then(eventFactory).should().create(mockUser),
                 () -> then(domainEventPublisher).should().publish(UserEventType.USER_PROFILE_CHANGED_EVENT.name(), userEvent, mockUser.getModifiedAt())
+        );
+    }
+
+    @Test
+    void 비밀번호를_변경한다() {
+        User mockUser = mock(User.class);
+        given(loadUserPort.selectOneByIdAndWithdrawnAtIsNull(ANY_USER_ID)).willReturn(mockUser);
+        UserEvent userEvent = mock(UserEvent.class);
+        given(eventFactory.create(any(User.class))).willReturn(userEvent);
+
+        sut.change(ANY_USER_ID, ANY_PASSWORD);
+
+        assertAll(
+                () -> then(loadUserPort).should().selectOneByIdAndWithdrawnAtIsNull(ANY_USER_ID),
+                () -> then(mockUser).should().changePassword(ANY_PASSWORD),
+                () -> then(recordUserPort).should().updateByPassword(mockUser),
+                () -> then(eventFactory).should().create(mockUser),
+                () -> then(domainEventPublisher).should().publish(UserEventType.USER_PASSWORD_CHANGED_EVENT.name(), userEvent, mockUser.getModifiedAt())
         );
     }
 
