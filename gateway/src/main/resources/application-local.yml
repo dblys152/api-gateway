@@ -1,25 +1,16 @@
-server:
-  port: 9000
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 2
 
-spring:
-  cloud:
-    gateway:
-      routes:
-        - id: first-service
-          predicates:
-            - Path=/a-service/**
-          uri: lb://a-service
-          filters:
-            - RewritePath=/a-service/(?<segment>.*), /$\{segment}
-
-        - id: second-service
-          predicates:
-            - Path=/b-service/**
-          uri: lb://B-SERVICE
-          filters:
-            - RewritePath=/b-service/(?<segment>.*), /$\{segment}
+jwt:
+  secret: TVNDLVVTRVItU0VDUkVULUZPUi1BVVRIT1JJWkFUSU9O
