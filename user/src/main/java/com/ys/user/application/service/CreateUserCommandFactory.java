@@ -6,7 +6,9 @@ import com.ys.user.application.port.in.model.SignUpUserRequest;
 import com.ys.user.domain.Account;
 import com.ys.user.domain.CreateUserCommand;
 import com.ys.user.domain.Profile;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CreateUserCommandFactory implements CommandFactory<SignUpUserRequest, CreateUserCommand> {
     @Override
     public CreateUserCommand create(SignUpUserRequest request) {
