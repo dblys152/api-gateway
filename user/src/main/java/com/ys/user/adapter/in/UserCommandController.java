@@ -5,12 +5,12 @@ import com.ys.infrastructure.utils.CommandFactory;
 import com.ys.user.adapter.in.model.UserModel;
 import com.ys.user.application.port.in.ChangeUserPasswordUseCase;
 import com.ys.user.application.port.in.ChangeUserProfileUseCase;
-import com.ys.user.application.port.in.SignUpUseCase;
 import com.ys.user.application.port.in.WithdrawUserUseCase;
 import com.ys.user.application.port.in.model.ChangeUserPasswordRequest;
 import com.ys.user.application.port.in.model.ChangeUserProfileRequest;
-import com.ys.user.application.port.in.model.SignUpUserRequest;
-import com.ys.user.domain.*;
+import com.ys.user.domain.ChangeUserProfileCommand;
+import com.ys.user.domain.User;
+import com.ys.user.domain.UserId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,20 +26,10 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 @RequiredArgsConstructor
 public class UserCommandController {
-    private final SignUpUseCase signUpUseCase;
-    private final CommandFactory<SignUpUserRequest, CreateUserCommand> createUserCommandFactory;
     private final ChangeUserProfileUseCase changeUserProfileUseCase;
     private final CommandFactory<ChangeUserProfileRequest, ChangeUserProfileCommand> changeUserProfileCommandFactory;
     private final ChangeUserPasswordUseCase changeUserPasswordUseCase;
     private final WithdrawUserUseCase withdrawUserUseCase;
-
-    @PostMapping("")
-    public ResponseEntity<ApiResponseModel<UserModel>> signUp(@RequestBody @Valid SignUpUserRequest request) {
-        User user = signUpUseCase.signUp(createUserCommandFactory.create(request));
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                ApiResponseModel.success(HttpStatus.CREATED.value(), UserModel.fromDomain(user)));
-    }
 
     @PutMapping("/{userId}/profile")
     public ResponseEntity<ApiResponseModel<UserModel>> changeProfile(

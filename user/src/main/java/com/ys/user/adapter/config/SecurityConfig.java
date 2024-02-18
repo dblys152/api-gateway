@@ -27,11 +27,7 @@ public class SecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers(
                 "/swagger-ui/**",
-                "/api/sign-up",
-                "/api/login",
-                "/api/token",
-                "/api/temporary-password",
-                "/api/user-temp-encrypt"
+                "/api/sign-up"
         );
     }
 
