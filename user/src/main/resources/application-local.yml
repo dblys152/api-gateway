@@ -11,11 +11,6 @@ spring:
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
     username: sa
     password:
-  jpa:
-    defer-datasource-initialization: true
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: none
   sql:
     init:
       schema-locations: classpath*:schema/create.sql

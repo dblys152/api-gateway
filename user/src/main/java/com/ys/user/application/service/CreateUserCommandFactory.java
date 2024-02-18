@@ -8,6 +8,8 @@ import com.ys.user.domain.CreateUserCommand;
 import com.ys.user.domain.Profile;
 import org.springframework.stereotype.Component;
 
+import java.time.format.DateTimeFormatter;
+
 @Component
 public class CreateUserCommandFactory implements CommandFactory<SignUpUserRequest, CreateUserCommand> {
     @Override
@@ -15,7 +17,12 @@ public class CreateUserCommandFactory implements CommandFactory<SignUpUserReques
         try {
             return new CreateUserCommand(
                     Account.create(request.getEmail(), request.getPassword()),
-                    Profile.of(request.getName(), request.getMobile(), request.getBirthDate(), request.getGender())
+                    Profile.of(
+                            request.getName(),
+                            request.getMobile(),
+                            request.getBirthDate().format(DateTimeFormatter.ISO_DATE),
+                            request.getGender().name()
+                    )
             );
         } catch (IllegalArgumentException | IllegalStateException ex) {
             throw new BadRequestException(ex.getMessage());
