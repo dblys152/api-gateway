@@ -21,10 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ContextConfiguration(classes = MybatisConfig.class)
 class UserRepositoryTest extends SupportUserFixture {
+    private static final String AES_SECRET = "Q1RNUy1QUk9ELU9GLUVOQ1JZUFRJT04K";
+
     @Autowired
     private UserRepository repository;
-
-    private static final String AES_SECRET = "Q1RNUy1QUk9ELU9GLUVOQ1JZUFRJT04K";
 
     private User user;
 
@@ -40,18 +40,6 @@ class UserRepositoryTest extends SupportUserFixture {
     @Test
     void insert() {
         repository.insert(user);
-    }
-
-    @Test
-    void updateByPasswordWrongCount() {
-        repository.insert(user);
-        repository.updateByPasswordWrongCount(user);
-    }
-
-    @Test
-    void updateByLastLoginAtAndPasswordWrongCount() {
-        repository.insert(user);
-        repository.updateByLastLoginAtAndPasswordWrongCount(user);
     }
 
     @Test

@@ -10,8 +10,6 @@ import java.util.Optional;
 @Mapper
 public interface UserRepository {
     void insert(User user);
-    void updateByPasswordWrongCount(User user);
-    void updateByLastLoginAtAndPasswordWrongCount(User user);
     void updateByPassword(User user);
     void updateByProfile(User user);
     void updateByWithdrawnAt(User user);

@@ -30,16 +30,6 @@ public class UserPersistenceAdapter implements RecordUserPort, LoadUserPort {
     }
 
     @Override
-    public void updateByPasswordWrongCount(User user) {
-        repository.updateByPasswordWrongCount(user);
-    }
-
-    @Override
-    public void updateByLastLoginAtAndPasswordWrongCount(User user) {
-        repository.updateByLastLoginAtAndPasswordWrongCount(user);
-    }
-
-    @Override
     public void updateByPassword(User user) {
         repository.updateByPassword(user);
     }
