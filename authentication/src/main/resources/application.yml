@@ -3,6 +3,6 @@ server:
 
 spring:
   application:
-    name: authentication
+    name: authentication-service
   profiles:
     active: local

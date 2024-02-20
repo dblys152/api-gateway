@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
     implementation 'com.github.dblys152:infrastructure:1.0.6'
+    implementation project(':user')
 
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -19,13 +20,15 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.7'
     implementation 'org.freemarker:freemarker:2.3.32'
 
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
     implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
     implementation 'org.mybatis:mybatis-typehandlers-jsr310:1.0.2'
 
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'org.postgresql:postgresql'
 
     implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
     implementation 'org.hibernate:hibernate-validator:7.0.5.Final'
