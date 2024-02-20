@@ -7,19 +7,15 @@ spring:
     config:
       enabled: false
   datasource:
-    url: jdbc:log4jdbc:h2:mem:user_test_db;DATABASE_TO_UPPER=false
+    url: jdbc:log4jdbc:postgresql://localhost:5432/ys_local
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    username: sa
-    password:
+    username: young
+    password: asdf1234%
   sql:
     init:
       schema-locations: classpath*:schema/create.sql
       encoding: UTF-8
       mode: always
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
 
 eureka:
   client:
