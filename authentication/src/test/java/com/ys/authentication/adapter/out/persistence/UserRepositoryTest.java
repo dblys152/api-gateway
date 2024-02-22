@@ -53,6 +53,13 @@ class UserRepositoryTest extends SupportUserFixture {
     }
 
     @Test
+    void selectOneByIdAndWithdrawnAtIsNull() {
+        Optional<User> actual = repository.selectOneByIdAndWithdrawnAtIsNull(USER_ID);
+
+        assertThat(actual).isNotNull();
+    }
+
+    @Test
     void selectOneByEmailAndWithdrawnAtIsNull() {
         Optional<User> actual = repository.selectOneByEmailAndWithdrawnAtIsNull(EMAIL);
 

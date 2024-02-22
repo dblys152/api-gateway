@@ -1,21 +1,21 @@
 package com.ys.authentication.application.service;
 
-import com.ys.authentication.application.port.out.LoadUserPort;
-import com.ys.authentication.application.port.out.RecordAuthenticationInfoPort;
-import com.ys.authentication.application.port.out.RecordAuthenticationInfoRedisPort;
-import com.ys.authentication.application.port.out.RecordUserPort;
+import com.ys.authentication.application.port.out.*;
 import com.ys.authentication.domain.AuthenticationInfo;
+import com.ys.authentication.domain.AuthenticationInfos;
 import com.ys.authentication.domain.TokenInfo;
 import com.ys.infrastructure.exception.UnauthorizedException;
-import com.ys.user.domain.Account;
-import com.ys.user.domain.Profile;
-import com.ys.user.domain.User;
-import com.ys.user.domain.UserId;
+import com.ys.infrastructure.jwt.PayloadInfo;
+import com.ys.user.domain.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,6 +47,15 @@ class AuthenticationServiceTest {
     private RecordAuthenticationInfoPort recordAuthenticationInfoPort;
     @Mock
     private RecordAuthenticationInfoRedisPort recordAuthenticationInfoRedisPort;
+    @Mock
+    private LoadAuthenticationInfoRedisPort loadAuthenticationInfoRedisPort;
+
+    @BeforeEach
+    void setUp() {
+        PayloadInfo payloadInfo = PayloadInfo.of(ANY_EMAIL, ANY_USER_ID.get(), ANY_NAME, UserRole.ROLE_USER.name());
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        securityContext.setAuthentication(new UsernamePasswordAuthenticationToken(payloadInfo, null));
+    }
 
     @Test
     void 로그인_한다() {
@@ -104,6 +113,48 @@ class AuthenticationServiceTest {
                 () -> then(loadUserPort).should().selectOneByEmailAndWithdrawnAtIsNull(ANY_EMAIL),
                 () -> then(user).should().validateExceededPasswordWrongCount(),
                 () -> then(user).should().matchesPassword(ANY_PASSWORD)
+        );
+    }
+
+    @Test
+    void 토큰을_갱신한다() {
+        AuthenticationInfo authenticationInfo = mock(AuthenticationInfo.class);
+        given(authenticationInfo.getUserId()).willReturn(ANY_USER_ID);
+        given(loadAuthenticationInfoRedisPort.findByRefreshToken(REFRESH_TOKEN)).willReturn(authenticationInfo);
+        User user = getMockUser();
+        given(loadUserPort.selectOneByIdAndWithdrawnAtIsNull(ANY_USER_ID)).willReturn(user);
+
+        TokenInfo actual = sut.refresh(REFRESH_TOKEN, BASE64_SECRET);
+
+        assertAll(
+                () -> assertThat(actual).isNotNull(),
+                () -> then(loadAuthenticationInfoRedisPort).should().findByRefreshToken(REFRESH_TOKEN),
+                () -> then(loadUserPort).should().selectOneByIdAndWithdrawnAtIsNull(ANY_USER_ID)
+        );
+    }
+
+    @Test
+    void 토큰_페이로드를_조회한다() {
+        given(loadAuthenticationInfoRedisPort.findAllByUserId(ANY_USER_ID.get())).willReturn(mock(AuthenticationInfos.class));
+
+        PayloadInfo actual = sut.get();
+
+        assertAll(
+                () -> assertThat(actual).isNotNull(),
+                () -> then(loadAuthenticationInfoRedisPort).should().findAllByUserId(ANY_USER_ID.get())
+        );
+    }
+
+    @Test
+    void 로그아웃_한다() {
+        AuthenticationInfos authenticationInfos = mock(AuthenticationInfos.class);
+        given(loadAuthenticationInfoRedisPort.findAllByUserId(ANY_USER_ID.get())).willReturn(authenticationInfos);
+
+        sut.logout();
+
+        assertAll(
+                () -> then(loadAuthenticationInfoRedisPort).should().findAllByUserId(ANY_USER_ID.get()),
+                () -> then(recordAuthenticationInfoRedisPort).should().deleteAll(authenticationInfos)
         );
     }
 }

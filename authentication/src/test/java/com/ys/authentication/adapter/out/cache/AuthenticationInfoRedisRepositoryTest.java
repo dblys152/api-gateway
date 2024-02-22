@@ -33,6 +33,13 @@ class AuthenticationInfoRedisRepositoryTest extends SupportAuthenticationInfoFix
     }
 
     @Test
+    void deleteAll() {
+        AuthenticationInfoRedisEntity saved = repository.save(authenticationInfoRedisEntity);
+
+        repository.deleteAll(List.of(saved));
+    }
+
+    @Test
     void findAllByUserId() {
         AuthenticationInfoRedisEntity saved = repository.save(authenticationInfoRedisEntity);
 

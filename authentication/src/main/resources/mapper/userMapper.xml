@@ -47,6 +47,14 @@
         </association>
     </resultMap>
 
+    <select id="selectOneByIdAndWithdrawnAtIsNull" parameterType="com.ys.user.domain.UserId" resultMap="userResultMap">
+        SELECT  *
+        FROM    USERS
+        WHERE   1 = 1
+        AND     USER_ID = #{id}
+        AND     WITHDRAWN_AT IS NULL
+    </select>
+
     <select id="selectOneByEmailAndWithdrawnAtIsNull" parameterType="String" resultMap="userResultMap">
         SELECT  *
         FROM    USERS

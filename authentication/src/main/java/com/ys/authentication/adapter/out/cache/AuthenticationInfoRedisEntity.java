@@ -2,6 +2,7 @@ package com.ys.authentication.adapter.out.cache;
 
 import com.ys.authentication.domain.AuthenticationInfo;
 import com.ys.infrastructure.jwt.JwtInfo;
+import com.ys.user.domain.UserId;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -59,5 +60,15 @@ public class AuthenticationInfoRedisEntity {
         long expirationTimeMillis = expirationTime.getTime();
         long timeoutMillis = expirationTimeMillis - currentTimeMillis;
         return Math.max(0, timeoutMillis / 1000);
+    }
+
+    public AuthenticationInfo toDomain() {
+        return AuthenticationInfo.of(
+                this.id,
+                UserId.of(this.userId),
+                JwtInfo.of(this.refreshToken, this.expiredAt),
+                this.clientIp,
+                this.createdAt
+        );
     }
 }
