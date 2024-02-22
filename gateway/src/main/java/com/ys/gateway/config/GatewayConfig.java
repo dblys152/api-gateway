@@ -23,13 +23,21 @@ public class GatewayConfig {
                         .path("/api/sign-up/**",
                                 "/api/users/**")
                         .uri("lb://USER-SERVICE"))
+                .route("authentication-service", route -> route
+                        .path("/api/login/**",
+                                "/api/token/**",
+                                "/api/token-info/**",
+                                "/api/logout/**")
+                        .uri("lb://AUTHENTICATION-SERVICE"))
                 .build();
     }
 
     @Bean
     public GlobalFilter tokenHeaderGlobalFilter(ObjectMapper objectMapper) {
         List<String> excludedPaths = List.of(
-                "/api/sign-up"
+                "/api/sign-up",
+                "/api/login",
+                "/api/token"
         );
         return new TokenHeaderGlobalFilter(excludedPaths, SECRET, objectMapper);
     }
