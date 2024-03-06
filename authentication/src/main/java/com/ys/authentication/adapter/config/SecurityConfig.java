@@ -27,7 +27,8 @@ public class SecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers(
                 "/swagger-ui/**",
-                "/api/sign-up"
+                "hello",
+                "/api/login"
         );
     }
 

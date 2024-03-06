@@ -31,7 +31,8 @@ class ProfileTest extends SupportUserFixture {
     @ParameterizedTest(name = "mobile : {0}")
     @MethodSource("getWrongMobiles")
     void 잘못된_패턴의_모바일로_프로필을_생성하면_에러를_반환한다(String wrongMobile) {
-        assertThatThrownBy(() -> Profile.of(USER_NAME, wrongMobile, BIRTH_DATE, Gender.MALE.name())).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Profile.of(USER_NAME, wrongMobile, BIRTH_DATE, Gender.MALE.name()))
+                .isInstanceOf(InvalidMobileException.class);
     }
 
     private static Stream<Arguments> getWrongMobiles() {

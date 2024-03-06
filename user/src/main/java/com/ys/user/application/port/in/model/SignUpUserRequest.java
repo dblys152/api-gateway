@@ -25,7 +25,9 @@ public class SignUpUserRequest {
     @Size(min = 1, max = 15)
     private String mobile;
 
+    @NotNull
     private LocalDate birthDate;
 
+    @NotNull
     private Gender gender;
 }

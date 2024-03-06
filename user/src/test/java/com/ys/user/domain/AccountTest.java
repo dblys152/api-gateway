@@ -32,7 +32,7 @@ class AccountTest extends SupportUserFixture {
     @ParameterizedTest(name = "email : {0}")
     @MethodSource("getWrongEmails")
     void 잘못된_패턴의_이메일로_계정을_생성하면_에러를_반환한다(String wrongEmail) {
-        assertThatThrownBy(() -> Account.create(wrongEmail, PASSWORD)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Account.create(wrongEmail, PASSWORD)).isInstanceOf(InvalidEmailException.class);
     }
 
     private static Stream<Arguments> getWrongEmails() {
@@ -47,7 +47,7 @@ class AccountTest extends SupportUserFixture {
     @ParameterizedTest(name = "password : {0}")
     @MethodSource("getWrongPasswords")
     void 잘못된_패턴의_비밀번호로_계정을_생성하면_에러를_반환한다(final String wrongPassword) {
-        assertThatThrownBy(() -> Account.create(EMAIL, wrongPassword)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Account.create(EMAIL, wrongPassword)).isInstanceOf(InvalidPasswordException.class);
     }
 
     private static Stream<Arguments> getWrongPasswords() {

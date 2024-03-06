@@ -4,6 +4,7 @@ import com.ys.infrastructure.data.LongId;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+@EqualsAndHashCode
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter

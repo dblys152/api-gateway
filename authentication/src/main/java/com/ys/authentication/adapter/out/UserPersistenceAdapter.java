@@ -3,9 +3,11 @@ package com.ys.authentication.adapter.out;
 import com.ys.authentication.adapter.out.persistence.UserRepository;
 import com.ys.authentication.application.port.out.LoadUserPort;
 import com.ys.authentication.application.port.out.RecordUserPort;
+import com.ys.infrastructure.encryption.AESEncryptor;
 import com.ys.user.domain.User;
 import com.ys.user.domain.UserId;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.NoSuchElementException;
@@ -13,6 +15,9 @@ import java.util.NoSuchElementException;
 @Component
 @RequiredArgsConstructor
 public class UserPersistenceAdapter implements LoadUserPort, RecordUserPort {
+    @Value("${aes.user-secret}")
+    private String AES_USER_SECRET;
+
     private final UserRepository repository;
 
     @Override
@@ -23,7 +28,8 @@ public class UserPersistenceAdapter implements LoadUserPort, RecordUserPort {
 
     @Override
     public User selectOneByEmailAndWithdrawnAtIsNull(String email) {
-        return repository.selectOneByEmailAndWithdrawnAtIsNull(email)
+        String encryptedEmail = AESEncryptor.getInstance().encrypt(email, AES_USER_SECRET);
+        return repository.selectOneByEmailAndWithdrawnAtIsNull(encryptedEmail)
                 .orElseThrow(NoSuchElementException::new);
     }
 
