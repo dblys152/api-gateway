@@ -3,7 +3,7 @@ package com.ys.authentication.adapter.out;
 import com.ys.authentication.adapter.out.persistence.UserRepository;
 import com.ys.authentication.application.port.out.LoadUserPort;
 import com.ys.authentication.application.port.out.RecordUserPort;
-import com.ys.infrastructure.encryption.AESEncryptor;
+import com.ys.shared.encryption.AESEncryptor;
 import com.ys.user.domain.User;
 import com.ys.user.domain.UserId;
 import lombok.RequiredArgsConstructor;

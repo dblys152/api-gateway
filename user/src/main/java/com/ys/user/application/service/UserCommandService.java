@@ -1,7 +1,7 @@
 package com.ys.user.application.service;
 
-import com.ys.infrastructure.event.DomainEventPublisher;
-import com.ys.infrastructure.utils.EventFactory;
+import com.ys.shared.event.DomainEventPublisher;
+import com.ys.shared.utils.EventFactory;
 import com.ys.user.application.port.in.ChangeUserPasswordUseCase;
 import com.ys.user.application.port.in.ChangeUserProfileUseCase;
 import com.ys.user.application.port.in.SignUpUseCase;

@@ -1,7 +1,7 @@
 package com.ys.authentication.adapter.in.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.ys.infrastructure.jwt.PayloadInfo;
+import com.ys.shared.jwt.PayloadInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

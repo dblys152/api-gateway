@@ -1,7 +1,7 @@
 package com.ys.user.domain;
 
-import com.ys.infrastructure.encryption.AESEncryptor;
-import com.ys.infrastructure.exception.AccessDeniedException;
+import com.ys.shared.encryption.AESEncryptor;
+import com.ys.shared.exception.AccessDeniedException;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;

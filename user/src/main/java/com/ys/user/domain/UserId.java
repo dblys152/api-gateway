@@ -1,6 +1,6 @@
 package com.ys.user.domain;
 
-import com.ys.infrastructure.data.LongId;
+import com.ys.shared.data.LongId;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 

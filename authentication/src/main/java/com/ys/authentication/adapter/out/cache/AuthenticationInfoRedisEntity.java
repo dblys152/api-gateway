@@ -1,7 +1,7 @@
 package com.ys.authentication.adapter.out.cache;
 
 import com.ys.authentication.domain.AuthenticationInfo;
-import com.ys.infrastructure.jwt.JwtInfo;
+import com.ys.shared.jwt.JwtInfo;
 import com.ys.user.domain.UserId;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

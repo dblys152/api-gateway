@@ -1,9 +1,9 @@
 package com.ys.user.application.event;
 
-import com.ys.infrastructure.event.DomainEvent;
-import com.ys.infrastructure.event.DomainEventPublisher;
-import com.ys.infrastructure.exception.UnauthorizedException;
-import com.ys.infrastructure.jwt.PayloadInfo;
+import com.ys.shared.event.DomainEvent;
+import com.ys.shared.event.DomainEventPublisher;
+import com.ys.shared.exception.UnauthorizedException;
+import com.ys.shared.jwt.PayloadInfo;
 import com.ys.user.domain.User;
 import com.ys.user.domain.event.UserEvent;
 import lombok.RequiredArgsConstructor;

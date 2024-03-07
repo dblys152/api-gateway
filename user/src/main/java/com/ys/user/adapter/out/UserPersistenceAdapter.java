@@ -1,6 +1,6 @@
 package com.ys.user.adapter.out;
 
-import com.ys.infrastructure.encryption.AESEncryptor;
+import com.ys.shared.encryption.AESEncryptor;
 import com.ys.user.adapter.out.persistence.UserRepository;
 import com.ys.user.application.port.out.LoadUserPort;
 import com.ys.user.application.port.out.RecordUserPort;

@@ -1,7 +1,7 @@
 package com.ys.user.adapter.in;
 
-import com.ys.infrastructure.utils.ApiResponseModel;
-import com.ys.infrastructure.utils.CommandFactory;
+import com.ys.shared.utils.ApiResponseModel;
+import com.ys.shared.utils.CommandFactory;
 import com.ys.user.adapter.in.model.UserModel;
 import com.ys.user.application.port.in.ChangeUserPasswordUseCase;
 import com.ys.user.application.port.in.ChangeUserProfileUseCase;

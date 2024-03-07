@@ -1,6 +1,6 @@
 package com.ys.authentication.domain;
 
-import com.ys.infrastructure.jwt.JwtInfo;
+import com.ys.shared.jwt.JwtInfo;
 import com.ys.user.domain.UserId;
 import org.junit.jupiter.api.Test;
 

@@ -1,6 +1,6 @@
 package com.ys.user.domain;
 
-import com.ys.infrastructure.exception.AccessDeniedException;
+import com.ys.shared.exception.AccessDeniedException;
 import com.ys.user.fixture.SupportUserFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

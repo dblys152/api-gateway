@@ -1,6 +1,6 @@
 package com.ys.user.application.service;
 
-import com.ys.infrastructure.utils.EventFactory;
+import com.ys.shared.utils.EventFactory;
 import com.ys.user.domain.User;
 import com.ys.user.domain.event.UserEvent;
 import org.springframework.stereotype.Component;

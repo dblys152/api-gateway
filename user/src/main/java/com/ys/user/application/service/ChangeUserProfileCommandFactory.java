@@ -1,8 +1,8 @@
 package com.ys.user.application.service;
 
 
-import com.ys.infrastructure.exception.BadRequestException;
-import com.ys.infrastructure.utils.CommandFactory;
+import com.ys.shared.exception.BadRequestException;
+import com.ys.shared.utils.CommandFactory;
 import com.ys.user.application.port.in.model.ChangeUserProfileRequest;
 import com.ys.user.domain.ChangeUserProfileCommand;
 import com.ys.user.domain.Profile;

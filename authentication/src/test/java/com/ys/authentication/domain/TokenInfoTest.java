@@ -1,7 +1,7 @@
 package com.ys.authentication.domain;
 
-import com.ys.infrastructure.jwt.JwtInfo;
-import com.ys.infrastructure.jwt.PayloadInfo;
+import com.ys.shared.jwt.JwtInfo;
+import com.ys.shared.jwt.PayloadInfo;
 import org.junit.jupiter.api.Test;
 
 import java.util.Date;

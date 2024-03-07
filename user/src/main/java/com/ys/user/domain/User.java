@@ -1,8 +1,8 @@
 package com.ys.user.domain;
 
 import com.github.f4b6a3.tsid.TsidCreator;
-import com.ys.infrastructure.exception.UnauthorizedException;
-import com.ys.infrastructure.jwt.PayloadInfo;
+import com.ys.shared.exception.UnauthorizedException;
+import com.ys.shared.jwt.PayloadInfo;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.security.core.Authentication;

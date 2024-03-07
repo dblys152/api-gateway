@@ -2,10 +2,10 @@ package com.ys.gateway.filter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ys.infrastructure.exception.BadRequestException;
-import com.ys.infrastructure.exception.UnauthorizedException;
-import com.ys.infrastructure.jwt.JwtProvider;
-import com.ys.infrastructure.utils.ApiResponseModel;
+import com.ys.shared.exception.BadRequestException;
+import com.ys.shared.exception.UnauthorizedException;
+import com.ys.shared.jwt.JwtProvider;
+import com.ys.shared.utils.ApiResponseModel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;

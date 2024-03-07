@@ -1,9 +1,9 @@
 package com.ys.user.adapter.in;
 
-import com.ys.infrastructure.exception.AccessDeniedException;
-import com.ys.infrastructure.exception.BadRequestException;
-import com.ys.infrastructure.exception.UnauthorizedException;
-import com.ys.infrastructure.utils.ApiResponseModel;
+import com.ys.shared.exception.AccessDeniedException;
+import com.ys.shared.exception.BadRequestException;
+import com.ys.shared.exception.UnauthorizedException;
+import com.ys.shared.utils.ApiResponseModel;
 import feign.FeignException;
 import jakarta.servlet.ServletException;
 import jakarta.validation.ConstraintViolationException;

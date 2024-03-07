@@ -1,8 +1,8 @@
 package com.ys.authentication.domain;
 
-import com.ys.infrastructure.jwt.JwtInfo;
-import com.ys.infrastructure.jwt.JwtProvider;
-import com.ys.infrastructure.jwt.PayloadInfo;
+import com.ys.shared.jwt.JwtInfo;
+import com.ys.shared.jwt.JwtProvider;
+import com.ys.shared.jwt.PayloadInfo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

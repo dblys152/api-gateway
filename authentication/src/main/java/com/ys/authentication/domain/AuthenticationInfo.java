@@ -1,7 +1,7 @@
 package com.ys.authentication.domain;
 
 import com.github.f4b6a3.tsid.TsidCreator;
-import com.ys.infrastructure.jwt.JwtInfo;
+import com.ys.shared.jwt.JwtInfo;
 import com.ys.user.domain.UserId;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
