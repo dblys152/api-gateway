@@ -6,9 +6,8 @@ spring:
   cloud:
     config:
       enabled: false
-  datasource:
-    url: jdbc:log4jdbc:postgresql://localhost:5432/ys_local
-    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/ys_local
     username: young
     password: asdf1234%
   sql:
@@ -21,6 +20,11 @@ spring:
     port: 6379
   cache:
     type: redis
+  rabbitmq:
+    host: localhost
+    username: ysrabbit
+    password: ysrabbit
+    publisher-confirm-type: CORRELATED
 
 eureka:
   client:
@@ -41,3 +45,20 @@ api-key:
     user: QVBJLUtFWS1GT1ItTVNDLVVTRVI=
 
 base-host: http://localhost:9000
+
+rabbitmq:
+  queue:
+    process-login-success: q.process-login-success
+    process-login-failure: q.process-login-failure
+    dead-letter-user: q.dead-letter-user
+  exchange:
+    authentication:
+      name: x.authentication-topic
+      login-success-routing-key: login-success
+      login-failure-routing-key: login-failure
+    notifier:
+      name: x.notifier-topic
+      default-routing-key: succeed-notifier
+    dead-letter:
+      name: x.dead-letter-topic
+      user-routing-key: failed-user
