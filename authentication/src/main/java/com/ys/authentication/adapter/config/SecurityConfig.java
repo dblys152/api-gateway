@@ -1,17 +1,16 @@
 package com.ys.authentication.adapter.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ys.user.adapter.filter.TokenHeaderFilter;
+import com.ys.authentication.adapter.filter.TokenHeaderFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -24,23 +23,17 @@ public class SecurityConfig {
     private String SECRET;
 
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers(
-                "/swagger-ui/**",
-                "hello",
-                "/api/login"
-        );
-    }
-
-    @Bean
-    protected SecurityFilterChain filterChain(HttpSecurity httpSecurity, ObjectMapper objectMapper) throws Exception {
+    protected SecurityWebFilterChain webFilterChain(ServerHttpSecurity httpSecurity, ObjectMapper objectMapper) throws Exception {
         httpSecurity
                 .httpBasic(withDefaults())
                 .formLogin((form) -> form.disable())
                 .csrf((csrf) -> csrf.disable())
-                .authorizeHttpRequests((authorize) -> authorize
-                        .anyRequest().permitAll())
-                .addFilterBefore(new TokenHeaderFilter(SECRET, objectMapper), UsernamePasswordAuthenticationFilter.class);
+                .authorizeExchange((exchangeSpec) -> exchangeSpec
+                        .pathMatchers("/swagger-ui/**",
+                                "hello",
+                                "/api/login").permitAll()
+                        .anyExchange().authenticated())
+                .addFilterAt(new TokenHeaderFilter(SECRET, objectMapper), SecurityWebFiltersOrder.AUTHENTICATION);
         return httpSecurity.build();
     }
 

@@ -1,25 +1,24 @@
 package com.ys.authentication.adapter.filter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ys.shared.exception.BadRequestException;
 import com.ys.shared.exception.UnauthorizedException;
 import com.ys.shared.jwt.JwtProvider;
-import com.ys.shared.jwt.PayloadInfo;
 import com.ys.shared.utils.ApiResponseModel;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-
-public class TokenHeaderFilter extends OncePerRequestFilter {
+public class TokenHeaderFilter implements WebFilter {
+    private static final String BEARER_TOKEN_TYPE = "Bearer ";
     private final String secret;
     private final ObjectMapper objectMapper;
 
@@ -29,37 +28,42 @@ public class TokenHeaderFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        return resolveToken(exchange)
+                .flatMap(accessToken -> Mono.fromCallable(() -> JwtProvider.getInstance().getPayload(accessToken, secret))
+                                .flatMap(payloadInfo -> {
+                                    SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(payloadInfo, null));
+                                    return chain.filter(exchange);
+                                }))
+                .onErrorResume(BadRequestException.class, ex -> handleException(exchange, HttpStatus.BAD_REQUEST, ex.getMessage()))
+                .onErrorResume(UnauthorizedException.class, ex -> handleException(exchange, HttpStatus.UNAUTHORIZED, ex.getMessage()))
+                .onErrorResume(Exception.class, ex -> handleException(exchange, HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage()));
+    }
+
+    private Mono<String> resolveToken(ServerWebExchange exchange) {
+        return Mono.just(exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION))
+                .switchIfEmpty(Mono.error(new BadRequestException("No authorization")))
+                .map(authorizationValue -> {
+                    if (!authorizationValue.startsWith(BEARER_TOKEN_TYPE)) {
+                        throw new BadRequestException("Invalid authorization header");
+                    }
+                    return authorizationValue.substring(BEARER_TOKEN_TYPE.length());
+                });
+    }
+
+    private Mono<Void> handleException(ServerWebExchange exchange, HttpStatus status, String message) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(status);
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
         try {
-            String accessToken = resolveToken(request);
-
-            PayloadInfo payloadInfo = JwtProvider.getInstance().getPayload(accessToken, secret);
-
-            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(payloadInfo, null));
-
-            filterChain.doFilter(request, response);
-        } catch (BadRequestException ex) {
-            handleException(response, HttpStatus.BAD_REQUEST.value(), ex.getMessage());
-        } catch (UnauthorizedException ex) {
-            handleException(response, HttpStatus.UNAUTHORIZED.value(), ex.getMessage());
-        } catch (Exception ex) {
-            handleException(response, HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
+            byte[] errorResponseBytes = objectMapper.writeValueAsBytes(
+                    ApiResponseModel.error(status.value(), message));
+            return response.writeWith(
+                    Mono.just(response.bufferFactory().wrap(errorResponseBytes)));
+        }  catch (JsonProcessingException e) {
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            return response.setComplete();
         }
-    }
-
-    private String resolveToken(HttpServletRequest request) {
-        String authorizationValue = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (authorizationValue == null) {
-            throw new BadRequestException("No authorization");
-        }
-
-        return authorizationValue.replace("Bearer ", "");
-    }
-
-    private void handleException(HttpServletResponse response, int status, String message) throws IOException {
-        response.setStatus(status);
-        response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(objectMapper.writeValueAsString(
-                ApiResponseModel.error(status, message)));
     }
 }
