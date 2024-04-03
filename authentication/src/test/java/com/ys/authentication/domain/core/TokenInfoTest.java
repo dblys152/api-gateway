@@ -1,4 +1,4 @@
-package com.ys.authentication.domain;
+package com.ys.authentication.domain.core;
 
 import com.ys.shared.jwt.JwtInfo;
 import com.ys.shared.jwt.PayloadInfo;

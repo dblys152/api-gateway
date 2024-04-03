@@ -1,4 +1,4 @@
-package com.ys.authentication.domain;
+package com.ys.authentication.domain.core;
 
 import com.github.f4b6a3.tsid.TsidCreator;
 import com.ys.shared.jwt.JwtInfo;
