@@ -1,10 +1,16 @@
 package com.ys.authentication.application.service;
 
-import com.ys.authentication.application.port.out.*;
-import com.ys.authentication.domain.AuthenticationInfo;
-import com.ys.authentication.domain.AuthenticationInfos;
-import com.ys.authentication.domain.TokenInfo;
+import com.ys.authentication.domain.core.AuthenticationInfo;
+import com.ys.authentication.domain.core.LoadAuthenticationInfoRedisPort;
+import com.ys.authentication.domain.core.RecordAuthenticationInfoRedisPort;
+import com.ys.authentication.domain.core.TokenInfo;
+import com.ys.authentication.domain.event.AuthenticationEvent;
+import com.ys.authentication.domain.event.AuthenticationEventType;
+import com.ys.authentication.domain.user.LoadUserPort;
+import com.ys.shared.event.DomainEventPublisher;
+import com.ys.shared.exception.AccessDeniedException;
 import com.ys.shared.exception.UnauthorizedException;
+import com.ys.shared.jwt.JwtProvider;
 import com.ys.shared.jwt.PayloadInfo;
 import com.ys.user.domain.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,19 +18,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceTest {
@@ -42,13 +55,11 @@ class AuthenticationServiceTest {
     @Mock
     private LoadUserPort loadUserPort;
     @Mock
-    private RecordUserPort recordUserPort;
-    @Mock
-    private RecordAuthenticationInfoPort recordAuthenticationInfoPort;
-    @Mock
     private RecordAuthenticationInfoRedisPort recordAuthenticationInfoRedisPort;
     @Mock
     private LoadAuthenticationInfoRedisPort loadAuthenticationInfoRedisPort;
+    @Mock
+    private DomainEventPublisher<AuthenticationEvent> domainEventPublisher;
 
     @BeforeEach
     void setUp() {
@@ -58,23 +69,27 @@ class AuthenticationServiceTest {
     }
 
     @Test
-    void 로그인_한다() {
+    void 로그인_성공_후_이벤트를_발행한다() {
         User user = getMockUser();
-        given(loadUserPort.selectOneByEmailAndWithdrawnAtIsNull(ANY_EMAIL)).willReturn(user);
+        given(loadUserPort.findByEmailAndWithdrawnAtIsNull(ANY_EMAIL)).willReturn(Mono.just(user));
         given(user.matchesPassword(ANY_PASSWORD)).willReturn(true);
+        given(recordAuthenticationInfoRedisPort.save(any(AuthenticationInfo.class))).willReturn(Mono.just(mock(AuthenticationInfo.class)));
 
-        TokenInfo actual = sut.login(ANY_EMAIL, ANY_PASSWORD, BASE64_SECRET, CLIENT_IP);
+        Mono<TokenInfo> actual = sut.login(ANY_EMAIL, ANY_PASSWORD, BASE64_SECRET, CLIENT_IP);
 
-        assertAll(
-                () -> assertThat(actual).isNotNull(),
-                () -> then(loadUserPort).should().selectOneByEmailAndWithdrawnAtIsNull(ANY_EMAIL),
-                () -> then(user).should().validateExceededPasswordWrongCount(),
-                () -> then(user).should().matchesPassword(ANY_PASSWORD),
-                () -> then(user).should().changeLastLoginAtAndInitPasswordWrongCount(),
-                () -> then(recordUserPort).should().updateByLastLoginAtAndPasswordWrongCount(user),
-                () -> then(recordAuthenticationInfoPort).should().insert(any(AuthenticationInfo.class)),
-                () -> then(recordAuthenticationInfoRedisPort).should().save(any(AuthenticationInfo.class))
-        );
+        StepVerifier.create(actual)
+                .assertNext(tokenInfo -> {
+                    assertAll(
+                            () -> assertThat(tokenInfo).isNotNull(),
+                            () -> then(loadUserPort).should().findByEmailAndWithdrawnAtIsNull(ANY_EMAIL),
+                            () -> then(user).should().validateExceededPasswordWrongCount(),
+                            () -> then(user).should().matchesPassword(ANY_PASSWORD),
+                            () -> then(recordAuthenticationInfoRedisPort).should().save(any(AuthenticationInfo.class)),
+                            () -> then(domainEventPublisher).should().publish(
+                                    eq(AuthenticationEventType.LOGIN_SUCCEED_EVENT.name()), any(AuthenticationEvent.class), any(LocalDateTime.class))
+                    );
+                })
+                .verifyComplete();
     }
 
     private User getMockUser() {
@@ -92,27 +107,37 @@ class AuthenticationServiceTest {
     @Test
     void 로그인_시_비밀번호_틀린_횟수가_초과되었으면_에러를_반환한다() {
         User user = mock(User.class);
-        given(loadUserPort.selectOneByEmailAndWithdrawnAtIsNull(ANY_EMAIL)).willReturn(user);
-        doThrow(UnauthorizedException.class).when(user).validateExceededPasswordWrongCount();
+        given(loadUserPort.findByEmailAndWithdrawnAtIsNull(ANY_EMAIL)).willReturn(Mono.just(user));
+        doThrow(AccessDeniedException.class).when(user).validateExceededPasswordWrongCount();
+
+        Mono<TokenInfo> actual = sut.login(ANY_EMAIL, ANY_PASSWORD, BASE64_SECRET, CLIENT_IP);
 
         assertAll(
-                () -> assertThatThrownBy(() -> sut.login(ANY_EMAIL, ANY_PASSWORD, BASE64_SECRET, CLIENT_IP)).isInstanceOf(UnauthorizedException.class),
-                () -> then(loadUserPort).should().selectOneByEmailAndWithdrawnAtIsNull(ANY_EMAIL),
+                () -> StepVerifier.create(actual)
+                        .expectError(AccessDeniedException.class)
+                        .verify(),
+                () -> then(loadUserPort).should().findByEmailAndWithdrawnAtIsNull(ANY_EMAIL),
                 () -> then(user).should().validateExceededPasswordWrongCount()
         );
     }
 
     @Test
-    void 로그인_시_비밀번호가_일치하지_않으면_에러를_반환한다() {
+    void 로그인_시_비밀번호가_일치하지_않으면_이벤트_발행_후_에러를_반환한다() {
         User user = mock(User.class);
-        given(loadUserPort.selectOneByEmailAndWithdrawnAtIsNull(ANY_EMAIL)).willReturn(user);
+        given(user.getUserId()).willReturn(ANY_USER_ID);
+        given(loadUserPort.findByEmailAndWithdrawnAtIsNull(ANY_EMAIL)).willReturn(Mono.just(user));
         given(user.matchesPassword(ANY_PASSWORD)).willReturn(false);
 
+        Mono<TokenInfo> actual = sut.login(ANY_EMAIL, ANY_PASSWORD, BASE64_SECRET, CLIENT_IP);
+
         assertAll(
-                () -> assertThatThrownBy(() -> sut.login(ANY_EMAIL, ANY_PASSWORD, BASE64_SECRET, CLIENT_IP)).isInstanceOf(UnauthorizedException.class),
-                () -> then(loadUserPort).should().selectOneByEmailAndWithdrawnAtIsNull(ANY_EMAIL),
+                () -> StepVerifier.create(actual)
+                        .expectError(UnauthorizedException.class)
+                        .verify(),
+                () -> then(loadUserPort).should().findByEmailAndWithdrawnAtIsNull(ANY_EMAIL),
                 () -> then(user).should().validateExceededPasswordWrongCount(),
-                () -> then(user).should().matchesPassword(ANY_PASSWORD)
+                () -> then(domainEventPublisher).should().publish(
+                        eq(AuthenticationEventType.LOGIN_FAILED_EVENT.name()), any(AuthenticationEvent.class), any(LocalDateTime.class))
         );
     }
 
@@ -120,41 +145,100 @@ class AuthenticationServiceTest {
     void 토큰을_갱신한다() {
         AuthenticationInfo authenticationInfo = mock(AuthenticationInfo.class);
         given(authenticationInfo.getUserId()).willReturn(ANY_USER_ID);
-        given(loadAuthenticationInfoRedisPort.findByRefreshToken(REFRESH_TOKEN)).willReturn(authenticationInfo);
+        given(loadAuthenticationInfoRedisPort.findByRefreshToken(REFRESH_TOKEN)).willReturn(Mono.just(authenticationInfo));
         User user = getMockUser();
-        given(loadUserPort.selectOneByIdAndWithdrawnAtIsNull(ANY_USER_ID)).willReturn(user);
+        given(loadUserPort.findByIdAndWithdrawnAtIsNull(ANY_USER_ID)).willReturn(Mono.just(user));
 
-        TokenInfo actual = sut.refresh(REFRESH_TOKEN, BASE64_SECRET);
+        Mono<TokenInfo> actual = sut.refresh(REFRESH_TOKEN, BASE64_SECRET);
+
+        StepVerifier.create(actual)
+                .assertNext(tokenInfo -> {
+                    assertAll(
+                            () -> assertThat(tokenInfo).isNotNull(),
+                            () -> then(loadAuthenticationInfoRedisPort).should().findByRefreshToken(REFRESH_TOKEN),
+                            () -> then(loadUserPort).should().findByIdAndWithdrawnAtIsNull(ANY_USER_ID)
+                    );
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void 토큰_갱신_시_REFRESH_TOKEN_정보가_유효하지_않으면_에러를_반환한다() {
+        AuthenticationInfo authenticationInfo = mock(AuthenticationInfo.class);
+        given(loadAuthenticationInfoRedisPort.findByRefreshToken(REFRESH_TOKEN)).willReturn(Mono.just(authenticationInfo));
+
+        try(MockedStatic<PayloadInfo> mockedStatic = mockStatic(PayloadInfo.class)) {
+            mockedStatic.when(() -> JwtProvider.getInstance().getPayload(REFRESH_TOKEN, BASE64_SECRET)).thenThrow(UnauthorizedException.class);
+
+            Mono<TokenInfo> actual = sut.refresh(REFRESH_TOKEN, BASE64_SECRET);
+
+            assertAll(
+                    () -> StepVerifier.create(actual)
+                            .expectError(UnauthorizedException.class)
+                            .verify(),
+                    () -> then(loadAuthenticationInfoRedisPort).should().findByRefreshToken(REFRESH_TOKEN)
+            );
+        }
+    }
+
+    @Test
+    void 토큰_갱신_시_인증정보의_유저가_존재하지_않으면_에러를_반환한다() {
+        AuthenticationInfo authenticationInfo = mock(AuthenticationInfo.class);
+        given(authenticationInfo.getUserId()).willReturn(ANY_USER_ID);
+        given(loadAuthenticationInfoRedisPort.findByRefreshToken(REFRESH_TOKEN)).willReturn(Mono.just(authenticationInfo));
+        given(loadUserPort.findByIdAndWithdrawnAtIsNull(ANY_USER_ID)).willThrow(NoSuchElementException.class);
+
+        Mono<TokenInfo> actual = sut.refresh(REFRESH_TOKEN, BASE64_SECRET);
 
         assertAll(
-                () -> assertThat(actual).isNotNull(),
+                () -> StepVerifier.create(actual)
+                        .expectError(UnauthorizedException.class)
+                        .verify(),
                 () -> then(loadAuthenticationInfoRedisPort).should().findByRefreshToken(REFRESH_TOKEN),
-                () -> then(loadUserPort).should().selectOneByIdAndWithdrawnAtIsNull(ANY_USER_ID)
+                () -> then(loadUserPort).should().findByIdAndWithdrawnAtIsNull(ANY_USER_ID)
         );
     }
 
     @Test
     void 토큰_페이로드를_조회한다() {
-        given(loadAuthenticationInfoRedisPort.findAllByUserId(ANY_USER_ID.get())).willReturn(mock(AuthenticationInfos.class));
+        Flux<AuthenticationInfo> authenticationInfoFlux = Flux.just(mock(AuthenticationInfo.class));
+        given(loadAuthenticationInfoRedisPort.findAllByUserId(ANY_USER_ID)).willReturn(authenticationInfoFlux);
 
-        PayloadInfo actual = sut.get();
+        Mono<PayloadInfo> actual = sut.get();
 
-        assertAll(
-                () -> assertThat(actual).isNotNull(),
-                () -> then(loadAuthenticationInfoRedisPort).should().findAllByUserId(ANY_USER_ID.get())
-        );
+        StepVerifier.create(actual)
+                .assertNext(payloadInfo -> {
+                    assertThat(payloadInfo).isNotNull();
+                    then(loadAuthenticationInfoRedisPort).should().findAllByUserId(ANY_USER_ID);
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void 토큰_페이로드_조회_시_인증정보가_없으면_에러를_반환한다() {
+        given(loadAuthenticationInfoRedisPort.findAllByUserId(ANY_USER_ID)).willReturn(Flux.empty());
+
+        Mono<PayloadInfo> actual = sut.get();
+
+        StepVerifier.create(actual)
+                .expectError(UnauthorizedException.class)
+                .verify();
+        then(loadAuthenticationInfoRedisPort).should().findAllByUserId(ANY_USER_ID);
     }
 
     @Test
     void 로그아웃_한다() {
-        AuthenticationInfos authenticationInfos = mock(AuthenticationInfos.class);
-        given(loadAuthenticationInfoRedisPort.findAllByUserId(ANY_USER_ID.get())).willReturn(authenticationInfos);
+        List<AuthenticationInfo> authenticationInfoList = List.of(mock(AuthenticationInfo.class));
+        Flux<AuthenticationInfo> authenticationInfoFlux = Flux.fromIterable(authenticationInfoList);
+        given(loadAuthenticationInfoRedisPort.findAllByUserId(ANY_USER_ID)).willReturn(authenticationInfoFlux);
+        given(recordAuthenticationInfoRedisPort.deleteAll(authenticationInfoList)).willReturn(Mono.empty());
 
-        sut.logout();
+        Mono<Void> actual = sut.logout();
 
-        assertAll(
-                () -> then(loadAuthenticationInfoRedisPort).should().findAllByUserId(ANY_USER_ID.get()),
-                () -> then(recordAuthenticationInfoRedisPort).should().deleteAll(authenticationInfos)
-        );
+        StepVerifier.create(actual)
+                .verifyComplete();
+
+        then(loadAuthenticationInfoRedisPort).should().findAllByUserId(ANY_USER_ID);
+        then(recordAuthenticationInfoRedisPort).should().deleteAll(authenticationInfoList);
     }
 }

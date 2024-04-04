@@ -1,13 +1,17 @@
 package com.ys.authentication.application.service;
 
-import com.ys.authentication.application.port.in.GetTokenPayloadInfoUseCase;
-import com.ys.authentication.application.port.in.LoginUseCase;
-import com.ys.authentication.application.port.in.LogoutUseCase;
-import com.ys.authentication.application.port.in.RefreshTokenUseCase;
-import com.ys.authentication.application.port.out.*;
-import com.ys.authentication.domain.AuthenticationInfo;
-import com.ys.authentication.domain.AuthenticationInfos;
-import com.ys.authentication.domain.TokenInfo;
+import com.ys.authentication.application.usecase.GetTokenPayloadInfoUseCase;
+import com.ys.authentication.application.usecase.LoginUseCase;
+import com.ys.authentication.application.usecase.LogoutUseCase;
+import com.ys.authentication.application.usecase.RefreshTokenUseCase;
+import com.ys.authentication.domain.core.AuthenticationInfo;
+import com.ys.authentication.domain.core.LoadAuthenticationInfoRedisPort;
+import com.ys.authentication.domain.core.RecordAuthenticationInfoRedisPort;
+import com.ys.authentication.domain.core.TokenInfo;
+import com.ys.authentication.domain.event.AuthenticationEvent;
+import com.ys.authentication.domain.event.AuthenticationEventType;
+import com.ys.authentication.domain.user.LoadUserPort;
+import com.ys.shared.event.DomainEventPublisher;
 import com.ys.shared.exception.UnauthorizedException;
 import com.ys.shared.jwt.JwtInfo;
 import com.ys.shared.jwt.JwtProvider;
@@ -19,7 +23,9 @@ import com.ys.user.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 
 @Transactional
@@ -28,106 +34,88 @@ import java.util.NoSuchElementException;
 public class AuthenticationService implements
         LoginUseCase, RefreshTokenUseCase, GetTokenPayloadInfoUseCase, LogoutUseCase {
     private final LoadUserPort loadUserPort;
-    private final RecordUserPort recordUserPort;
-    private final RecordAuthenticationInfoPort recordAuthenticationInfoPort;
     private final RecordAuthenticationInfoRedisPort recordAuthenticationInfoRedisPort;
     private final LoadAuthenticationInfoRedisPort loadAuthenticationInfoRedisPort;
+    private final DomainEventPublisher<AuthenticationEvent> domainEventPublisher;
 
     @Override
-    public TokenInfo login(String email, String password, String base64Secret, String clientIp) {
-        User user = loadUserPort.selectOneByEmailAndWithdrawnAtIsNull(email);
+    public Mono<TokenInfo> login(String email, String password, String base64Secret, String clientIp) {
+        return loadUserPort.findByEmailAndWithdrawnAtIsNull(email)
+                .flatMap(user -> {
+                    user.validateExceededPasswordWrongCount();
 
-        user.validateExceededPasswordWrongCount();
+                    if (!user.matchesPassword(password)) {
+                        return handleUnsuccessfulLogin(user);
+                    }
 
-        if (!user.matchesPassword(password)) {
-            handleUnsuccessfulLogin(user);
-        }
-
-        return handleSuccessfulLogin(user, base64Secret, clientIp);
+                    return handleSuccessfulLogin(user, base64Secret, clientIp);
+                });
     }
 
-    private void handleUnsuccessfulLogin(User user) {
-        user.increasePasswordWrongCount();
-        recordUserPort.updateByPasswordWrongCount(user);
-
-        throw new UnauthorizedException("사용자 정보가 일치하지 않습니다.");
+    private Mono<TokenInfo> handleUnsuccessfulLogin(User user) {
+        return publishAuthenticationEvent(AuthenticationEventType.LOGIN_FAILED_EVENT, user)
+                .then(Mono.error(new UnauthorizedException("사용자 정보가 일치하지 않습니다.")));
     }
 
-    private TokenInfo handleSuccessfulLogin(User user, String base64Secret, String clientIp) {
-        changeLastLoginAtAndInitPasswordWrongCount(user);
-
-        TokenInfo tokenInfo = getTokenInfo(user, base64Secret);
-
-        saveAuthenticationInfo(user.getUserId(), tokenInfo.getRefreshTokenInfo(), clientIp);
-
-        return tokenInfo;
+    private Mono<TokenInfo> handleSuccessfulLogin(User user, String base64Secret, String clientIp) {
+        return getTokenInfo(user, base64Secret, null)
+                .flatMap(tokenInfo -> {
+                    AuthenticationInfo authenticationInfo = AuthenticationInfo.create(user.getUserId(), tokenInfo.getRefreshTokenInfo(), clientIp);
+                    return recordAuthenticationInfoRedisPort.save(authenticationInfo)
+                            .flatMap(saved -> publishAuthenticationEvent(AuthenticationEventType.LOGIN_SUCCEED_EVENT, user))
+                            .thenReturn(tokenInfo);
+                });
     }
 
-    private void changeLastLoginAtAndInitPasswordWrongCount(User user) {
-        user.changeLastLoginAtAndInitPasswordWrongCount();
-        recordUserPort.updateByLastLoginAtAndPasswordWrongCount(user);
+    private Mono<Void> publishAuthenticationEvent(AuthenticationEventType eventType, User user) {
+        return Mono.fromRunnable(() -> domainEventPublisher.publish(eventType.name(), AuthenticationEvent.fromDomain(user), LocalDateTime.now()));
     }
 
-    private TokenInfo getTokenInfo(User user, String base64Secret) {
-        Account account = user.getAccount();
-        Profile profile = user.getProfile();
-        TokenInfo tokenInfo = TokenInfo.create(
-                base64Secret,
-                PayloadInfo.of(
-                        account.getEmail(), user.getUserId().get(), profile.getName(), user.getRoles())
-        );
-        return tokenInfo;
-    }
+    private Mono<TokenInfo> getTokenInfo(User user, String base64Secret, JwtInfo refreshTokenInfo) {
+        return Mono.fromCallable(() -> {
+            Account account = user.getAccount();
+            Profile profile = user.getProfile();
+            PayloadInfo payloadInfo = PayloadInfo.of(
+                    account.getEmail(), user.getUserId().get(), profile.getName(), user.getRoles());
 
-    private void saveAuthenticationInfo(UserId userId, JwtInfo refreshTokenInfo, String clientIp) {
-        AuthenticationInfo authenticationInfo = AuthenticationInfo.create(userId, refreshTokenInfo, clientIp);
-        recordAuthenticationInfoPort.insert(authenticationInfo);
-        recordAuthenticationInfoRedisPort.save(authenticationInfo);
+            if (refreshTokenInfo == null) {
+                return TokenInfo.create(base64Secret, payloadInfo);
+            }
+
+            return TokenInfo.create(base64Secret, payloadInfo, refreshTokenInfo);
+        });
     }
 
     @Override
-    public TokenInfo refresh(String refreshToken, String base64Secret) {
-        try {
-            AuthenticationInfo authenticationInfo = loadAuthenticationInfoRedisPort.findByRefreshToken(refreshToken);
+    public Mono<TokenInfo> refresh(String refreshToken, String base64Secret) {
+        Mono<AuthenticationInfo> authenticationInfoMono = loadAuthenticationInfoRedisPort.findByRefreshToken(refreshToken);
 
-            JwtProvider.getInstance().getPayload(refreshToken, base64Secret);
+        Mono<PayloadInfo> payloadInfoMono = Mono.fromCallable(() -> JwtProvider.getInstance().getPayload(refreshToken, base64Secret))
+                .onErrorMap(ex -> new UnauthorizedException("토큰이 유효하지 않습니다."));
 
-            User user = loadUserPort.selectOneByIdAndWithdrawnAtIsNull(authenticationInfo.getUserId());
-
-            return getTokenInfo(authenticationInfo.getRefreshTokenInfo(), user, base64Secret);
-        } catch (NoSuchElementException | UnauthorizedException ex) {
-            throw new UnauthorizedException("토큰이 유효하지 않습니다.");
-        }
-    }
-
-    private TokenInfo getTokenInfo(JwtInfo refreshTokenInfo, User user, String base64Secret) {
-        Account account = user.getAccount();
-        Profile profile = user.getProfile();
-        TokenInfo tokenInfo = TokenInfo.create(
-                base64Secret,
-                PayloadInfo.of(
-                        account.getEmail(), user.getUserId().get(), profile.getName(), user.getRoles()),
-                refreshTokenInfo
-        );
-        return tokenInfo;
+        return Mono.zip(authenticationInfoMono, payloadInfoMono)
+                .flatMap(tuple -> {
+                    AuthenticationInfo authenticationInfo = tuple.getT1();
+                    return loadUserPort.findByIdAndWithdrawnAtIsNull(authenticationInfo.getUserId())
+                            .flatMap(user -> getTokenInfo(user, base64Secret, authenticationInfo.getRefreshTokenInfo()));
+                })
+                .onErrorResume(NoSuchElementException.class, ex -> Mono.error(new UnauthorizedException("토큰이 유효하지 않습니다.")));
     }
 
     @Override
-    public PayloadInfo get() {
-        PayloadInfo payloadInfo = User.getPayloadInfo();
-        AuthenticationInfos authenticationInfos = loadAuthenticationInfoRedisPort.findAllByUserId(payloadInfo.getUserId());
-        if (authenticationInfos.isEmpty()) {
-            throw new UnauthorizedException("토큰이 유효하지 않습니다.");
-        }
-        return payloadInfo;
+    public Mono<PayloadInfo> get() {
+        return Mono.fromCallable(() -> User.getPayloadInfo())
+                .flatMap(payloadInfo -> loadAuthenticationInfoRedisPort.findAllByUserId(UserId.of(payloadInfo.getUserId()))
+                        .switchIfEmpty(Mono.error(new UnauthorizedException("토큰이 유효하지 않습니다.")))
+                        .then(Mono.just(payloadInfo)));
     }
 
     @Override
-    public void logout() {
-        PayloadInfo payloadInfo = User.getPayloadInfo();
-        AuthenticationInfos authenticationInfos = loadAuthenticationInfoRedisPort.findAllByUserId(payloadInfo.getUserId());
-        if (!authenticationInfos.isEmpty()) {
-            recordAuthenticationInfoRedisPort.deleteAll(authenticationInfos);
-        }
+    public Mono<Void> logout() {
+        return Mono.fromCallable(() -> User.getPayloadInfo())
+                .flatMap(payloadInfo -> loadAuthenticationInfoRedisPort.findAllByUserId(UserId.of(payloadInfo.getUserId()))
+                        .switchIfEmpty(Mono.empty())
+                        .collectList()
+                        .flatMap(authenticationInfoList -> recordAuthenticationInfoRedisPort.deleteAll(authenticationInfoList)));
     }
 }
