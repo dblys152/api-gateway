@@ -1,0 +1,65 @@
+logging:
+  level:
+    root: INFO
+    org.springframework.r2dbc.core: debug
+
+spring:
+  cloud:
+    config:
+      enabled: false
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/ys_local
+    username: young
+    password: asdf1234%
+  sql:
+    init:
+      schema-locations: classpath*:schema/create.sql
+      encoding: UTF-8
+      mode: always
+  redis:
+    host: localhost
+    port: 6379
+  cache:
+    type: redis
+  rabbitmq:
+    host: localhost
+    username: ysrabbit
+    password: ysrabbit
+    publisher-confirm-type: CORRELATED
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: TVNDLVVTRVItU0VDUkVULUZPUi1BVVRIT1JJWkFUSU9O
+
+aes:
+  user-secret: Q1RNUy1QUk9ELU9GLUVOQ1JZUFRJT04K
+
+api-key:
+  header: X-API-Key
+  value:
+    user: QVBJLUtFWS1GT1ItTVNDLVVTRVI=
+
+base-host: http://localhost:9000
+
+rabbitmq:
+  queue:
+    process-login-success: q.process-login-success
+    process-login-failure: q.process-login-failure
+    dead-letter-user: q.dead-letter-user
+  exchange:
+    authentication:
+      name: x.authentication-topic
+      login-success-routing-key: login-success
+      login-failure-routing-key: login-failure
+    notifier:
+      name: x.notifier-topic
+      default-routing-key: succeed-notifier
+    dead-letter:
+      name: x.dead-letter-topic
+      user-routing-key: failed-user
