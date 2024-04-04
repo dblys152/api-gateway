@@ -5,42 +5,75 @@ plugins {
     id 'io.freefair.lombok' version '8.4'
 }
 
-dependencies {
-    implementation 'com.github.dblys152:shared:1.0.7'
+def javaProjects = [
+        project(":user:domain"),
+        project(":user:application"),
+        project(":user:adapter")
 
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-logging:3.1.5'
-    implementation 'org.springframework.boot:spring-boot-starter-amqp:3.1.2'
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.1.0'
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.0.3'
-    implementation 'io.github.openfeign:feign-okhttp:12.5'
-    implementation 'org.slf4j:slf4j-api:2.0.7'
-    implementation 'org.freemarker:freemarker:2.3.32'
+]
+def springBootProjects = [
+        project(":user:application"),
+        project(":user:adapter")
+]
 
-    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
-    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
-    implementation 'org.mybatis:mybatis-typehandlers-jsr310:1.0.2'
+configure(javaProjects) {
+    apply plugin: "java"
+    apply plugin: "io.freefair.lombok"
 
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    runtimeOnly 'org.postgresql:postgresql'
+    tasks.withType(JavaCompile) {
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
+        options.encoding = "UTF-8"
+    }
 
-    implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
-    implementation 'org.hibernate:hibernate-validator:7.0.5.Final'
-    implementation 'org.glassfish:jakarta.el:4.0.2'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
-    implementation 'com.github.f4b6a3:tsid-creator:5.2.6'
-    implementation 'org.apache.commons:commons-lang3:3.13.0'
-    implementation 'commons-validator:commons-validator:1.7'
+    dependencies {
+        implementation 'com.github.dblys152:shared:1.0.7'
 
-    testImplementation "org.springframework.boot:spring-boot-starter-test:3.2.0"
-    testImplementation "org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.2"
-    testImplementation 'com.github.tomakehurst:wiremock-standalone:2.27.2'
+        implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+        implementation 'org.hibernate:hibernate-validator:7.0.5.Final'
+        implementation 'org.glassfish:jakarta.el:4.0.2'
+        implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+        implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+        implementation 'com.github.f4b6a3:tsid-creator:5.2.6'
+        implementation 'org.apache.commons:commons-lang3:3.13.0'
+        implementation 'commons-validator:commons-validator:1.7'
+
+        if (!springBootProjects.contains(project)) {
+            testImplementation(platform('org.junit:junit-bom:5.7.1'))
+            testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+            testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.3'
+            testImplementation 'org.assertj:assertj-core:3.20.2'
+            testImplementation 'org.mockito:mockito-junit-jupiter:5.3.1'
+        }
+    }
 }
 
-jar {
-    enabled(true)
+configure(springBootProjects) {
+    apply plugin: "org.springframework.boot"
+    apply plugin: "io.spring.dependency-management"
+
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        implementation 'org.springframework.boot:spring-boot-starter-logging:3.1.5'
+        implementation 'org.springframework.boot:spring-boot-starter-amqp:3.1.2'
+        implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.1.0'
+        implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.0.3'
+        implementation 'io.github.openfeign:feign-okhttp:12.5'
+        implementation 'org.slf4j:slf4j-api:2.0.7'
+        implementation 'org.freemarker:freemarker:2.3.32'
+
+        implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+        implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
+        implementation 'org.mybatis:mybatis-typehandlers-jsr310:1.0.2'
+
+        testImplementation "org.springframework.boot:spring-boot-starter-test"
+        testImplementation "org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.2"
+        testImplementation 'com.github.tomakehurst:wiremock-standalone:2.27.2'
+    }
+}
+
+bootJar {
+    enabled(false)
 }

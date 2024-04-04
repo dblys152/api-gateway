@@ -4,6 +4,10 @@ include 'eureka'
 
 include 'gateway'
 
-include 'user'
+include 'user:domain'
+include 'user:application'
+include 'user:adapter'
 
-include 'authentication'
+include 'authentication:domain'
+include 'authentication:application'
+include 'authentication:adapter'
