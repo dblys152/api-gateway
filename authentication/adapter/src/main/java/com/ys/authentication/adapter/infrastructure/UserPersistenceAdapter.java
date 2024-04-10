@@ -1,6 +1,5 @@
 package com.ys.authentication.adapter.infrastructure;
 
-import com.ys.authentication.adapter.infrastructure.persistence.UserEntity;
 import com.ys.authentication.adapter.infrastructure.persistence.UserReactiveRepository;
 import com.ys.authentication.domain.user.LoadUserPort;
 import com.ys.shared.encryption.AESEncryptor;
@@ -26,7 +25,11 @@ public class UserPersistenceAdapter implements LoadUserPort {
     public Mono<User> findByIdAndWithdrawnAtIsNull(UserId userId) {
         return repository.findByIdAndWithdrawnAtIsNull(userId.get())
                 .switchIfEmpty(Mono.error(new NoSuchElementException(ExceptionMessages.NO_DATA_MESSAGE)))
-                .flatMap(UserEntity::toDomain);
+                .flatMap(userEntity -> {
+                    User user = userEntity.toDomain();
+                    user.decrypt(AES_USER_SECRET);
+                    return Mono.just(user);
+                });
     }
 
     @Override
@@ -34,6 +37,10 @@ public class UserPersistenceAdapter implements LoadUserPort {
         String encryptedEmail = AESEncryptor.getInstance().encrypt(email, AES_USER_SECRET);
         return repository.findByEmailAndWithdrawnAtIsNull(encryptedEmail)
                 .switchIfEmpty(Mono.error(new NoSuchElementException(ExceptionMessages.NO_DATA_MESSAGE)))
-                .flatMap(UserEntity::toDomain);
+                .flatMap(userEntity -> {
+                    User user = userEntity.toDomain();
+                    user.decrypt(AES_USER_SECRET);
+                    return Mono.just(user);
+                });
     }
 }

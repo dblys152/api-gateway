@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
-import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 
@@ -68,8 +67,8 @@ public class UserEntity {
 
     private LocalDateTime withdrawnAt;
 
-    public Mono<User> toDomain() {
-        return Mono.just(User.of(
+    public User toDomain() {
+        return User.of(
                 UserId.of(this.userId),
                 this.type,
                 this.status,
@@ -91,6 +90,6 @@ public class UserEntity {
                 this.joinedAt,
                 this.modifiedAt,
                 this.withdrawnAt
-        ));
+        );
     }
 }
