@@ -68,7 +68,6 @@ configure(springBootProjects) {
 
         implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive:3.2.2'
         implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
-        implementation 'org.postgresql:r2dbc-postgresql:1.0.4.RELEASE'
 
         testImplementation "org.springframework.boot:spring-boot-starter-test"
         testImplementation 'io.projectreactor:reactor-test'
@@ -77,4 +76,8 @@ configure(springBootProjects) {
 
 bootJar {
     enabled(false)
+}
+
+jar {
+    enabled(true)
 }
