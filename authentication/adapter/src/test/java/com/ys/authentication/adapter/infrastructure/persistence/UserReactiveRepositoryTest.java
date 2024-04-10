@@ -1,19 +1,18 @@
 package com.ys.authentication.adapter.infrastructure.persistence;
 
+import com.ys.authentication.adapter.config.R2dbcConfig;
 import com.ys.authentication.adapter.infrastructure.fixture.SupportUserFixture;
-import com.ys.user.domain.User;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-@Transactional
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration
+@DataR2dbcTest
+@EnableAutoConfiguration
+@ContextConfiguration(classes = R2dbcConfig.class)
 class UserReactiveRepositoryTest extends SupportUserFixture {
     private static final String AES_SECRET = "Q1RNUy1QUk9ELU9GLUVOQ1JZUFRJT04K";
 
@@ -22,7 +21,7 @@ class UserReactiveRepositoryTest extends SupportUserFixture {
 
     @Test
     void findByIdAndWithdrawnAtIsNull() {
-        Mono<User> actual = repository.findByIdAndWithdrawnAtIsNull(SupportUserFixture.USER_ID);
+        Mono<UserEntity> actual = repository.findByIdAndWithdrawnAtIsNull(USER_ID.get());
 
         StepVerifier.create(actual)
                 .verifyComplete();
@@ -30,9 +29,16 @@ class UserReactiveRepositoryTest extends SupportUserFixture {
 
     @Test
     void findByEmailAndWithdrawnAtIsNull() {
-        Mono<User> actual = repository.findByEmailAndWithdrawnAtIsNull(SupportUserFixture.EMAIL);
+        Mono<UserEntity> actual = repository.findByEmailAndWithdrawnAtIsNull(EMAIL);
 
         StepVerifier.create(actual)
                         .verifyComplete();
+    }
+
+    @Test
+    void findById() {
+        Mono<UserEntity> actual = repository.findById(USER_ID.get());
+        StepVerifier.create(actual)
+                .verifyComplete();
     }
 }
